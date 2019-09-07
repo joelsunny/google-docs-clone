@@ -3,7 +3,7 @@ import logo from './logo.svg';
 import './App.css';
 import Quill from 'quill';
 
-const base_url = "http://";
+var io = new WebSocket("ws://192.168.0.111:8002");
 
 class Editor extends React.Component {
 
@@ -28,17 +28,15 @@ class Editor extends React.Component {
           quill.on('text-change', this.log);
     }
 
+    async deltaPropogate(msg) {
+        console.log('sending delta to server');
+        io.send(msg);
+    }
+
     log(delta, oldDelta, source) {
         const logstream = document.getElementById("c" + this.props.id);
-        const url = base_url + 'delta';
         logstream.innerHTML = "delta : " + JSON.stringify(delta) + "<br>" + "old: " + JSON.stringify(oldDelta) + "<br>" + "source: " + source + "<br>" + "-------------------<br><br>" + logstream.innerHTML;
-        fetch(url, {
-            method: 'POST',
-            body : {
-                "id" : this.props.id,
-                "delta" : delta["ops"]
-            }
-        });
+        this.deltaPropogate(JSON.stringify(delta["ops"]));
     }
 
     render() {
@@ -57,11 +55,35 @@ class Editor extends React.Component {
     }
 }
 
+class ServerView extends Editor {
+    constructor(props) {
+        super(props);
+    }
+
+    componentDidMount() {
+
+        io.onopen = () => {
+                            this.log("url: " + io.url);
+                            this.log("connection status: " + io.readyState);
+                        };
+        
+        io.onmessage = (msg) => {
+                this.log(msg.data);
+                console.log(msg);
+        };
+    }
+
+    log(msg) {
+        const logstream = document.getElementById("c" + this.props.id);
+        logstream.innerHTML = "got: " + msg + "<br>" + "<br>" + logstream.innerHTML;
+    }
+}
+
 function App() {
     return (
     <div className="App">
         <Editor id="1" />
-        <Editor id="2" />
+        <ServerView id="2" />
     </div>
     );
 }
