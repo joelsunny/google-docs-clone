@@ -2,15 +2,14 @@ package quill
 
 import (
 	"encoding/json"
-	"log"
 )
 
 type delta map[string]interface{}
 
 type Operations struct {
-	retain float64
-	insert string
-	delete float64
+	Retain float64
+	Insert string
+	Delete float64
 }
 
 // GetDelta: function to get delta
@@ -28,19 +27,18 @@ func GetDelta(data []byte) *Operations {
 
 		rf, ok := r.(float64)
 		if ok {
-			op.retain = rf
+			op.Retain = rf
 		}
 
 		iS, ok := i.(string)
 		if ok {
-			op.insert = iS
+			op.Insert = iS
 		}
 
 		df, ok := d.(float64)
 		if ok {
-			op.delete = df
+			op.Delete = df
 		}
 	}
-	log.Println("delta: ", op)
 	return &op
 }
