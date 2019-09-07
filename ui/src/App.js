@@ -3,7 +3,7 @@ import logo from './logo.svg';
 import './App.css';
 import Quill from 'quill';
 
-var io = new WebSocket("ws://192.168.0.111:8002");
+var io = new WebSocket("ws://192.168.0.103:8080");
 
 class Editor extends React.Component {
 
