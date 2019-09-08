@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"sync"
@@ -11,6 +12,7 @@ import (
 )
 
 var addr = flag.String("addr", "localhost:8080", "http service address")
+var document = Document{Message: "This is a Sentence.", LastModifiedUserName: "Nintappan"}
 
 type Document struct {
 	Message              string
@@ -38,7 +40,8 @@ func deltaHandler(delta []byte, doc *Document) {
 
 func echo(w http.ResponseWriter, r *http.Request) {
 	c, err := upgrader.Upgrade(w, r, nil)
-	document := Document{Message: "This is a Sentence.", LastModifiedUserName: "Nintappan"}
+	fmt.Println("%s", c.RemoteAddr())
+
 	if err != nil {
 		log.Print("upgrade:", err)
 		return
@@ -65,5 +68,5 @@ func main() {
 	flag.Parse()
 	log.SetFlags(0)
 	http.HandleFunc("/", echo)
-	log.Fatal(http.ListenAndServe("192.168.0.103:8080", nil))
+	log.Fatal(http.ListenAndServe("192.168.0.111:8080", nil))
 }

@@ -51,6 +51,13 @@
   outline: none;
 }
 
+.server-console {
+  width: 90%;
+  height: 95%;
+  background: rgb(241, 240, 240);
+  overflow: scroll;
+}
+
 .console {
   width: 90%;
   height: 30%;
