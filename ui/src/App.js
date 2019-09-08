@@ -77,11 +77,24 @@ class ServerView extends Editor {
         const logstream = document.getElementById("c" + this.props.id);
         logstream.innerHTML = "got: " + msg + "<br>" + "<br>" + logstream.innerHTML;
     }
+
+    render() {
+        return(
+            <div id={this.props.id} className="editor">
+                <div id={"c" + this.props.id} className="console">
+                    
+                </div>
+            </div>
+        )
+    }
 }
 
 function App() {
     return (
     <div className="App">
+        <div className="logo-wrapper">
+            <img className="logo" src="logo.png"/>
+        </div>
         <Editor id="1" />
         <ServerView id="2" />
     </div>

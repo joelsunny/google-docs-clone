@@ -5,6 +5,21 @@
   height: 100vh;
   align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
+}
+
+.logo-wrapper {
+  justify-self: center;
+  display: flex;
+  width: 100vw;
+  height: auto;
+  justify-content: center;
+}
+
+.logo {
+  justify-self: center;
+  width: 10%;
+  height: auto;
 }
 
 .editor {
