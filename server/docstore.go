@@ -3,7 +3,9 @@ package main
 import (
 	"flag"
 	"log"
+	"net"
 	"net/http"
+	"os"
 	"sync"
 
 	"./quill"
@@ -56,6 +58,26 @@ func deltaHandler(delta []byte) {
 	}
 }
 
+func getIP() string {
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		os.Stderr.WriteString("Oops: " + err.Error() + "\n")
+		os.Exit(1)
+	}
+
+	for _, a := range addrs {
+		if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				//os.Stdout.WriteString(ipnet.IP.String() + "\n")
+				if ipnet.IP.String()[0:3] == "192" {
+					return (ipnet.IP.String())
+				}
+			}
+		}
+	}
+	return ("")
+}
+
 func docserve(w http.ResponseWriter, r *http.Request) {
 	c, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -86,5 +108,5 @@ func main() {
 	flag.Parse()
 	log.SetFlags(0)
 	http.HandleFunc("/", docserve)
-	log.Fatal(http.ListenAndServe("192.168.0.103:8080", nil))
+	log.Fatal(http.ListenAndServe(getIP()+":8080", nil))
 }
