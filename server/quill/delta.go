@@ -7,9 +7,9 @@ import (
 type delta map[string]interface{}
 
 type Operations struct {
-	Retain float64
+	Retain int
 	Insert string
-	Delete float64
+	Delete int
 }
 
 // GetDelta: function to get delta
@@ -27,7 +27,7 @@ func GetDelta(data []byte) *Operations {
 
 		rf, ok := r.(float64)
 		if ok {
-			op.Retain = rf
+			op.Retain = int(rf)
 		}
 
 		iS, ok := i.(string)
@@ -37,7 +37,7 @@ func GetDelta(data []byte) *Operations {
 
 		df, ok := d.(float64)
 		if ok {
-			op.Delete = df
+			op.Delete = int(df)
 		}
 	}
 	return &op
