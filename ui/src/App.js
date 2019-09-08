@@ -2,6 +2,7 @@ import React from 'react';
 import logo from './logo.svg';
 import './App.css';
 import Quill from 'quill';
+const utf8 = require('utf8');
 
 var io = new WebSocket("ws://192.168.0.103:8080");
 
@@ -26,10 +27,14 @@ class Editor extends React.Component {
 
           // add a listener for text-change event
           quill.on('text-change', this.log);
+
+          // set text
+        //   io.onmessage = (msg) => {
+        //         quill.setText(msg.data, 'silent')
+        //     };
     }
 
     async deltaPropogate(msg) {
-        console.log('sending delta to server');
         io.send(msg);
     }
 
@@ -69,7 +74,10 @@ class ServerView extends Editor {
         
         io.onmessage = (msg) => {
                 this.log(msg.data);
-                console.log(msg);
+        };
+
+        io.onclose = () => {
+            this.log("connection terminated");
         };
     }
 
@@ -77,11 +85,24 @@ class ServerView extends Editor {
         const logstream = document.getElementById("c" + this.props.id);
         logstream.innerHTML = "got: " + msg + "<br>" + "<br>" + logstream.innerHTML;
     }
+
+    render() {
+        return(
+            <div id={this.props.id} className="editor">
+                <div id={"c" + this.props.id} className="server-console">
+                    
+                </div>
+            </div>
+        )
+    }
 }
 
 function App() {
     return (
     <div className="App">
+        <div className="logo-wrapper">
+            <img className="logo" src="logo.png"/>
+        </div>
         <Editor id="1" />
         <ServerView id="2" />
     </div>
