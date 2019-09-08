@@ -10,8 +10,6 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-var addr = flag.String("addr", "localhost:8080", "http service address")
-
 type Document struct {
 	Message              string
 	LastModifiedUserName string
@@ -28,17 +26,38 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func deltaHandler(delta []byte, doc *Document) {
+var document = Document{Message: "", LastModifiedUserName: "Nintappan"}
+
+func deltaHandler(delta []byte) {
 	operation := quill.GetDelta(delta)
 	log.Println("operation : ", operation)
-	doc.mux.Lock()
-	defer doc.mux.Unlock()
-	doc.Message = doc.Message + operation.Insert
+	document.mux.Lock()
+	defer document.mux.Unlock()
+	// perform operation
+	retain := operation.Retain
+	delete := operation.Delete
+	insertLength := len(operation.Insert)
+	docLength := len(document.Message)
+	if document.Message == "" && retain == 0 && delete == 0 {
+		// a new message starts
+		document.Message = operation.Insert
+	} else if retain == docLength && delete == 0 {
+		// appending to message
+		document.Message = document.Message + operation.Insert
+	} else if delete+retain == docLength-1 {
+		// deleteing from the end and replacing
+		document.Message = document.Message[:retain] + operation.Insert
+	} else if retain+delete < docLength && delete > insertLength {
+		// replacing and message size reduces
+		document.Message = document.Message[:retain] + operation.Insert + document.Message[retain+delete:]
+	} else if retain+delete < docLength && delete <= insertLength {
+		// replacing and message size reduces
+		document.Message = document.Message[:retain] + operation.Insert + document.Message[retain+delete:]
+	}
 }
 
-func echo(w http.ResponseWriter, r *http.Request) {
+func docserve(w http.ResponseWriter, r *http.Request) {
 	c, err := upgrader.Upgrade(w, r, nil)
-	document := Document{Message: "This is a Sentence.", LastModifiedUserName: "Nintappan"}
 	if err != nil {
 		log.Print("upgrade:", err)
 		return
@@ -51,7 +70,7 @@ func echo(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		deltaHandler(message, &document)
+		deltaHandler(message)
 
 		err = c.WriteMessage(mt, []byte(document.Message))
 		if err != nil {
@@ -61,9 +80,11 @@ func echo(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+var addr = flag.String("addr", "localhost:8080", "http service address")
+
 func main() {
 	flag.Parse()
 	log.SetFlags(0)
-	http.HandleFunc("/", echo)
+	http.HandleFunc("/", docserve)
 	log.Fatal(http.ListenAndServe("192.168.0.103:8080", nil))
 }
