@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"os"
 
-	"./page"
-	"./quill"
 	"github.com/gorilla/websocket"
+	"github.com/joelsunny/docstore/server/page"
+	"github.com/joelsunny/docstore/server/quill"
 )
 
 type DeltaOp struct {
@@ -21,12 +21,12 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-var document = page.Page
+var document page.Page
 
 func deltaHandler(delta []byte) {
 	operation := quill.GetDelta(delta)
 	log.Println("operation : ", operation)
-
+	document.ApplyDeltaOperation(*operation)
 }
 
 // will be cleaned up
@@ -66,7 +66,7 @@ func docserve(w http.ResponseWriter, r *http.Request) {
 
 		deltaHandler(message)
 
-		err = c.WriteMessage(mt, []byte(document.Message))
+		err = c.WriteMessage(mt, document.GetContentAsByte())
 		if err != nil {
 			log.Println("write:", err)
 			break
@@ -74,7 +74,7 @@ func docserve(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func _main() {
+func main() {
 	log.SetFlags(0)
 	http.HandleFunc("/", docserve)
 	log.Fatal(http.ListenAndServe(getIP()+":8080", nil))

@@ -4,25 +4,30 @@ import (
 	"fmt"
 	"strconv"
 
-	"../quill"
+	"github.com/joelsunny/docstore/server/quill"
 )
 
-const PAGELEN = 20
+const PAGELEN = 1024
 
 // Page: Page of a Document
 type Page struct {
-	Content [PAGELEN]byte
+	Content [PAGELEN]rune
 	eoc     int
 }
 
 func (p *Page) ApplyDeltaOperation(delta quill.Operations) {
 	retain := delta.Retain
 	delete := delta.Delete
-	insert := []byte(delta.Insert)
+	insert := []rune(delta.Insert)
 
+	if p.eoc+len(insert)-delete >= 1024 {
+		// panic
+		return
+	}
 	p.DeleteString(retain, delete)
 	p.InsertString(retain, insert)
 
+	p.Print()
 }
 
 func (p *Page) FreeSpace() int {
@@ -30,7 +35,7 @@ func (p *Page) FreeSpace() int {
 }
 
 func (p *Page) rightShift(index int, shiftValue int) {
-	if p.eoc <= index {
+	if p.eoc <= index || shiftValue == 0 {
 		//panic("error in rightShift, c1")
 		return
 	}
@@ -44,11 +49,10 @@ func (p *Page) rightShift(index int, shiftValue int) {
 }
 
 func (p *Page) leftShift(index int, shiftValue int) {
-
-	// if p.eoc-shiftValue < 0 {
-	// 	panic("page underflow, leftShift")
-	// }
-
+	if shiftValue == 0 {
+		//panic("error in leftShift, c1")
+		return
+	}
 	for i := index; i <= p.eoc; i++ {
 		p.Content[i-shiftValue] = p.Content[i]
 	}
@@ -59,18 +63,20 @@ func (p *Page) DeleteString(retain int, deleteLength int) {
 	p.eoc -= deleteLength
 }
 
-func (p *Page) InsertString(retain int, str []byte) {
-
+func (p *Page) InsertString(retain int, str []rune) {
 	p.rightShift(retain, len(str))
 	for i := 0; i < len(str); i++ {
 		p.Content[retain+i] = str[i]
 	}
 
 	p.eoc = p.eoc + len(str)
-
 }
 
 func (p *Page) Print() {
 	fmt.Println("Content: " + string(p.Content[0:p.eoc+1]))
 	fmt.Println("eoc    : " + strconv.Itoa(p.eoc))
+}
+
+func (p *Page) GetContentAsByte() []byte {
+	return []byte(string(p.Content[:p.eoc]))
 }
