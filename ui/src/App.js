@@ -1,10 +1,9 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
 import Quill from 'quill';
-const utf8 = require('utf8');
 
 var io = new WebSocket("ws://192.168.0.111:8080");
+var quill;
 
 class Editor extends React.Component {
 
@@ -17,7 +16,7 @@ class Editor extends React.Component {
 
     componentDidMount() {
         var container = document.getElementById('e' + this.props.id);
-        var quill = new Quill(container, {
+        quill = new Quill(container, {
             modules:{
                 toolbar:false
             },
@@ -28,10 +27,6 @@ class Editor extends React.Component {
           // add a listener for text-change event
           quill.on('text-change', this.log);
 
-          // set text
-        //   io.onmessage = (msg) => {
-        //         quill.setText(msg.data, 'silent')
-        //     };
     }
 
     async deltaPropogate(msg) {
@@ -74,6 +69,7 @@ class ServerView extends Editor {
         
         io.onmessage = (msg) => {
                 this.log(msg.data);
+                quill.updateContents(JSON.parse(msg.data), 'api')
         };
 
         io.onclose = () => {

@@ -2,3 +2,4 @@
 .vscode/*
 # macOS
 .DS_Store
+*.vscode
