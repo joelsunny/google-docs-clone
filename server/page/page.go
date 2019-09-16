@@ -2,12 +2,13 @@ package page
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 
-	"github.com/joelsunny/docstore/server/quill"
+	"../quill"
 )
 
-const PAGELEN = 1024
+const PAGELEN = 20
 
 // Page: Page of a Document
 type Page struct {
@@ -64,6 +65,10 @@ func (p *Page) DeleteString(retain int, deleteLength int) {
 }
 
 func (p *Page) InsertString(retain int, str []rune) {
+	if p.eoc+len(str) >= PAGELEN {
+		log.Println("ERROR: error while insert")
+		return
+	}
 	p.rightShift(retain, len(str))
 	for i := 0; i < len(str); i++ {
 		p.Content[retain+i] = str[i]

@@ -1,14 +1,15 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"net/http"
 	"os"
 
+	"./page"
+	"./quill"
 	"github.com/gorilla/websocket"
-	"github.com/joelsunny/docstore/server/page"
-	"github.com/joelsunny/docstore/server/quill"
 )
 
 type DeltaOp struct {
@@ -21,12 +22,11 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-var document page.Page
-
-func deltaHandler(delta []byte) {
+func deltaHandler(delta []byte, user page.User) {
 	operation := quill.GetDelta(delta)
-	log.Println("operation : ", operation)
-	document.ApplyDeltaOperation(*operation)
+	p := page.Packet{Delta: *operation, UserData: user}
+	// log.Println("operation : ", operation)
+	d.ChanDelta <- p
 }
 
 // will be cleaned up
@@ -50,6 +50,30 @@ func getIP() string {
 	return ("")
 }
 
+// func docserveOld(w http.ResponseWriter, r *http.Request) {
+// 	c, err := upgrader.Upgrade(w, r, nil)
+// 	if err != nil {
+// 		log.Print("upgrade:", err)
+// 		return
+// 	}
+// 	defer c.Close()
+// 	for {
+// 		mt, message, err := c.ReadMessage()
+// 		if err != nil {
+// 			log.Println("read:", err)
+// 			break
+// 		}
+
+// 		deltaHandler(message)
+
+// 		err = c.WriteMessage(mt, d.DocPage.GetContentAsByte())
+// 		if err != nil {
+// 			log.Println("write:", err)
+// 			break
+// 		}
+// 	}
+// }
+
 func docserve(w http.ResponseWriter, r *http.Request) {
 	c, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -57,25 +81,40 @@ func docserve(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer c.Close()
+
+	// initialize the new users pageview to that of server
+	//user := page.User{Socket: *c, PageView: d.DocPage}
+	user := page.NewUser(*c, d.DocPage)
+
+	// TODO: add the user to the document users list
+	d.AddUser(&user)
+	fmt.Println("Added new user")
+	fmt.Println(user.ID)
+
 	for {
-		mt, message, err := c.ReadMessage()
+		// TODO: find out significance of message type return value
+		_, message, err := c.ReadMessage()
 		if err != nil {
 			log.Println("read:", err)
-			break
+			if err.Error() == "websocket: close 1001 (going away)" {
+				fmt.Println("connection terminated")
+				d.RemoveUser(&user)
+				return
+			}
 		}
 
-		deltaHandler(message)
-
-		err = c.WriteMessage(mt, document.GetContentAsByte())
-		if err != nil {
-			log.Println("write:", err)
-			break
-		}
+		deltaHandler(message, user)
 	}
 }
 
+// defining this as global variable for simplicity, need to handle doc initilaization on user request
+// probably need an updater routine per user with a lock on the document for mutex
+var d page.Doc
+
 func main() {
 	log.SetFlags(0)
+	d = page.NewDoc()
+	go d.DocUpdater() // go routine for document synchronization
 	http.HandleFunc("/", docserve)
-	log.Fatal(http.ListenAndServe(getIP()+":8080", nil))
+	log.Fatal(http.ListenAndServe("0.0.0.0:8080", nil))
 }
