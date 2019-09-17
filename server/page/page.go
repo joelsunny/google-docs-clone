@@ -8,9 +8,9 @@ import (
 	"../quill"
 )
 
-const PAGELEN = 20
+const PAGELEN = 100
 
-// Page: Page of a Document
+// Page : Page of a Document
 type Page struct {
 	Content [PAGELEN]rune
 	eoc     int

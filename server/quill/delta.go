@@ -2,7 +2,6 @@ package quill
 
 import (
 	"encoding/json"
-	"fmt"
 )
 
 type delta map[string]interface{}
@@ -13,7 +12,7 @@ type Operations struct {
 	Delete int    `json:"delete"`
 }
 
-// GetDelta: function to get delta
+// GetDelta :- function to get delta
 func GetDelta(data []byte) *Operations {
 
 	var arr []delta
@@ -42,18 +41,4 @@ func GetDelta(data []byte) *Operations {
 		}
 	}
 	return &op
-}
-
-func ConvertToQuillFormat(delta Operations) interface{} {
-	var ops [3]map[string]interface{}
-	var d map[string]interface{}
-
-	ops[0] = map[string]interface{}{"retain": delta.Retain}
-	ops[1] = map[string]interface{}{"insert": delta.Insert}
-	ops[2] = map[string]interface{}{"delete": delta.Delete}
-
-	d = map[string]interface{}{"ops": ops}
-	fmt.Println("delta: ")
-	fmt.Println(d)
-	return &d
 }

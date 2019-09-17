@@ -3,9 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
-	"net"
 	"net/http"
-	"os"
 
 	"./page"
 	"./quill"
@@ -28,51 +26,6 @@ func deltaHandler(delta []byte, user page.User) {
 	// log.Println("operation : ", operation)
 	d.ChanDelta <- p
 }
-
-// will be cleaned up
-func getIP() string {
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		os.Stderr.WriteString("Oops: " + err.Error() + "\n")
-		os.Exit(1)
-	}
-
-	for _, a := range addrs {
-		if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				//os.Stdout.WriteString(ipnet.IP.String() + "\n")
-				if ipnet.IP.String()[0:3] == "192" {
-					return (ipnet.IP.String())
-				}
-			}
-		}
-	}
-	return ("")
-}
-
-// func docserveOld(w http.ResponseWriter, r *http.Request) {
-// 	c, err := upgrader.Upgrade(w, r, nil)
-// 	if err != nil {
-// 		log.Print("upgrade:", err)
-// 		return
-// 	}
-// 	defer c.Close()
-// 	for {
-// 		mt, message, err := c.ReadMessage()
-// 		if err != nil {
-// 			log.Println("read:", err)
-// 			break
-// 		}
-
-// 		deltaHandler(message)
-
-// 		err = c.WriteMessage(mt, d.DocPage.GetContentAsByte())
-// 		if err != nil {
-// 			log.Println("write:", err)
-// 			break
-// 		}
-// 	}
-// }
 
 func docserve(w http.ResponseWriter, r *http.Request) {
 	c, err := upgrader.Upgrade(w, r, nil)

@@ -9,6 +9,7 @@ import (
 	websocket "github.com/gorilla/websocket"
 )
 
+// UserPacket :- protocol unit for user updates
 type UserPacket struct {
 	Type    string
 	Message interface{}
@@ -16,14 +17,17 @@ type UserPacket struct {
 
 // User :- user struct definition
 type User struct {
-	ID        int
-	Socket    websocket.Conn
-	PageView  Page // use mutex, no need to use mutex if only one goroutine is updating this
-	ChanDelta chan quill.Operations
+	ID            int // use socket as id?
+	Socket        websocket.Conn
+	PageView      Page // use mutex, no need to use mutex if only one goroutine is updating this
+	ChanDelta     chan quill.Operations
+	InsertTracker Page
+	DeleteTracker Page
 }
 
 var uid int
 
+// NewUser :-
 func NewUser(socket websocket.Conn, doc Page) User {
 	u := User{ID: uid, ChanDelta: make(chan quill.Operations, 10), Socket: socket, PageView: doc}
 	uid++
@@ -32,11 +36,11 @@ func NewUser(socket websocket.Conn, doc Page) User {
 }
 
 // ApplyDeltaOp :- update PageView of user on receiving a new delta
-// :param ownUpdate :- boolean indicating whether the update is done by the user itself
-func (u *User) ApplyDeltaOp(delta quill.Operations, ownUpdate bool) {
+func (u *User) ApplyDeltaOp(delta quill.Operations) {
 	return
 }
 
+// UserUpdate :- send delta from collaborators to user
 func (u *User) UserUpdate() {
 
 	m := UserPacket{Type: "delta"}
@@ -51,4 +55,9 @@ func (u *User) UserUpdate() {
 			break // remove break?
 		}
 	}
+}
+
+// AckHandler :- handle user acknowledement of deltas
+func (u *User) AckHandler() {
+
 }
